@@ -1,0 +1,48 @@
+#wrapper{
+ 	text-align: center;
+ 	margin: auto;
+ 	width: 60%;
+ 	height: 100%;
+ 	border: dotted black 5px;
+ 	font-family: arial;
+ 	font-size: 20px;
+ 	font-weight: bold;
+ 	margin: 0px auto;
+ 	overflow: auto;
+ 	background: url(images/aa.jpg) no-repeat center;
+ 	background: url(images/aa.jpg) no-repeat center;
+		-webkit-background-size: cover;
+		-o-background-size: cover;
+		-moz-background-size: cover;
+		background-size: cover;
+ }
+ html{
+ 	background: url(images/aa.jpg) no-repeat center fixed;
+ }
+ p.in_cer{
+ 	background: red;
+ 	background-size: 50px;
+ 	color: white;	
+ }
+ h4{
+ 	margin-top: 1px;
+
+ }
+ .container{
+ 	width: 60%;
+	margin: 0px auto;
+	overflow: auto;
+ }
+
+ .footer_button{
+ 	float: left;
+ }
+ i{
+ 	width: flex;
+ }
+@media only screen and (max-width: 960px){
+	#wrapper{
+		width: 80%;
+	}
+
+}
