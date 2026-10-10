@@ -1,49 +1,16 @@
-<?php
- echo '
-<!DOCTYPE html>
-	
-<html>
-<head>
-	<title>Fika Indegine</title>
-	 
-	 <!--<link rel="stylesheet" type="text/css" href="css/css_fa.css">-->
-	 <link rel="stylesheet" type="text/css" href="css_fika.css">
-
-
-	 <style>
-
-	
-
-	</style>
-</head>
-<body>
-	<div id="wrapper">
-		
-	 <header>
-		<div id="top_header">
-			<div id="top_link">
-			<ul>
-				<a href="home_fika.php"><li>Home</li></a> |
-                <a href="add_fika.php"><li>Register</li></a> |
-                <a href="Record_fika.php"><li>Records</li>  </a>	
-			</ul>
-			</div>
-			  <img src="images/YARO.JPG" width="100%" height="160">
-		</div>	  
-	</header>	
-	 <nav>
-	 	<div id="top_serch">
-            <form action="" method="post">
-                <input type="search" name="search" >
-                <button type="submit" name="button">Seach</button>
-            </form>
-        </div>
-        
-	 </nav>
- 
-     </div>
-</body>
-</html>
-
-'; ?>
-<?php   include "search.php"; ?> 
+<header>
+    <div id="top_header">
+        <nav id="top_link" aria-label="Main navigation">
+            <ul>
+                <li><a href="home_fika.php">Home</a></li>
+                <li><a href="add_fika.php">Register</a></li>
+                <li><a href="record_fika.php">Records</a></li>
+            </ul>
+        </nav>
+        <img src="images/YARO.JPG" width="100%" height="160" alt="Fika Local Government">
+    </div>
+    <form id="top_serch" action="home_fika.php" method="post">
+        <input type="search" name="search" aria-label="Search by name">
+        <button type="submit" name="button">Search</button>
+    </form>
+</header>

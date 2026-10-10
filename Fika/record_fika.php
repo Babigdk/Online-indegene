@@ -1,61 +1,103 @@
 
-<?php   include 'database_fika.php'; ?>
-
 <?php
 
- //get the image extension function
+use OnlineIndegene\Logger;
+use OnlineIndegene\RecordQuery;
 
-    function GetImageExtension($imagetype) 
-      { 
-        if(empty($imagetype)) return false; 
-        switch($imagetype) 
-        { 
-            case 'images/bmp': return '.bmp'; 
-            case 'images/gif': return '.gif'; 
-            case 'images/jpeg': return '.jpg'; 
-            case 'images/png': return '.png'; 
-            default: return false; 
-        } 
-     } 
+require_once __DIR__ . '/database_fika.php';
+require_once __DIR__ . '/lib/RecordQuery.php';
 
-     // getting forms value
+function GetImageExtension($imagetype)
+{
+    $extensions = [
+        'image/bmp' => '.bmp',
+        'image/gif' => '.gif',
+        'image/jpeg' => '.jpg',
+        'image/png' => '.png',
+    ];
 
- if (!empty($_FILES["userfile"]["name"])) { 
-     $file_name = $_FILES["userfile"]["name"]; 
-     $temp_name = $_FILES["userfile"]["tmp_name"]; 
-     $imgtype = $_FILES["userfile"]["type"]; 
-     $ext = GetImageExtension($imgtype); 
-     $imagename = date("d-m-Y")."-".time().$ext; 
-     $target_path = "images/".$imagename; 
-     $first_name = $_POST['fname'];
-     $last_name = $_POST['lname'];
-     $phone_number = $_POST['pnumber'];
-     $home_town = $_POST['htown'];
-     $contact_address = $_POST['caddress'];
-     $email = $_POST['email'];
-     $gender = $_POST['gender'];
-
-     // prepare for the insert
-  
-if(move_uploaded_file($temp_name, $target_path)) {
-
-   $query_upload = "INSERT INTO `fika_admin` (`id`,`first_name`,`last_name`,`phone_number`,`home_town`,`contact_address`,`email`,`gender`,`image`,`submission_date`) VALUES  ('','".$first_name."','".$last_name."','".$phone_number."','".$home_town."','".$contact_address."','".$email."','".$gender."','".$target_path."','".date("Y-m-d")."')";  
-
-       $mysqli->query($query_upload) or die($mysqli->error);   
- 
-}else{
-  exit("error while uploading image on the server");
- } 
-
+    return $extensions[$imagetype] ?? false;
 }
 
-// query
+$databaseError = false;
 
-$query = "SELECT * FROM `fika_admin` ORDER BY id ASC";
+$uploadedFile = null;
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $formValues = [];
+    foreach (['fname', 'lname', 'pnumber', 'htown', 'caddress', 'email', 'gender'] as $key) {
+        $value = $_POST[$key] ?? '';
+        if (!is_string($value)) {
+            http_response_code(400);
+            exit('The submitted record contains invalid fields.');
+        }
+        $formValues[] = $value;
+    }
 
-$sql = $mysqli->query($query) or die($mysqli->error); 
+    $upload = $_FILES['userfile'] ?? null;
+    if (!is_array($upload) || ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        exit('Please choose an image to submit with the record.');
+    }
 
+    $tempName = (string) ($upload['tmp_name'] ?? '');
+    if (!is_uploaded_file($tempName)) {
+        http_response_code(400);
+        exit('The image could not be uploaded. Please try again.');
+    }
+
+    $imageType = mime_content_type($tempName);
+    $extension = is_string($imageType) ? GetImageExtension($imageType) : false;
+    if ($extension === false) {
+        http_response_code(400);
+        exit('Please upload a BMP, GIF, JPEG, or PNG image.');
+    }
+
+    $imageName = bin2hex(random_bytes(16)) . $extension;
+    $imagePath = 'images/' . $imageName;
+    $uploadedFile = __DIR__ . '/' . $imagePath;
+    if (!move_uploaded_file($tempName, $uploadedFile)) {
+        http_response_code(400);
+        exit('The image could not be uploaded. Please try again.');
+    }
+
+    [$firstName, $lastName, $phoneNumber, $homeTown, $contactAddress, $email, $gender] = $formValues;
+    $submissionDate = date('Y-m-d');
+
+    try {
+        $statement = $mysqli->prepare(RecordQuery::insertSql());
+        $statement->bind_param(
+            'sssssssss',
+            $firstName,
+            $lastName,
+            $phoneNumber,
+            $homeTown,
+            $contactAddress,
+            $email,
+            $gender,
+            $imagePath,
+            $submissionDate
+        );
+        $statement->execute();
+        $statement->close();
+    } catch (mysqli_sql_exception $exception) {
+        if ($uploadedFile !== null && is_file($uploadedFile)) {
+            unlink($uploadedFile);
+        }
+        Logger::error('Record insertion failed', $exception);
+        http_response_code(500);
+        exit('The record could not be saved. Please try again later.');
+    }
+}
+
+try {
+    $sql = $mysqli->query('SELECT * FROM `fika_admin` ORDER BY id ASC');
+} catch (mysqli_sql_exception $exception) {
+    Logger::error('Record listing failed', $exception);
+    http_response_code(500);
+    $databaseError = true;
+    $sql = null;
+}
 ?>
 
 
@@ -174,17 +216,19 @@ $sql = $mysqli->query($query) or die($mysqli->error);
 
 
                 <?php 
-                 if ($sql->num_rows > 0 ) {
+                 if ($databaseError) { ?>
+                <td colspan="10">Records are temporarily unavailable. Please try again later.</td>
+                <?php } elseif ($sql->num_rows > 0 ) {
                  
-                while ($row = mysqli_fetch_array($sql, MYSQL_BOTH)): ?>
-                <td><?php echo $row['id']; ?></td>
-                <td><?php echo $row['first_name']; ?></td>
-                <td><?php echo $row['last_name']; ?></td>
-                <td><?php echo $row['phone_number'];  ?></td>
-                <td><?php echo $row['home_town'];  ?></td>
-                <td><?php echo $row['contact_address'];  ?></td>
-                <td><?php echo $row['email'];  ?></td>
-                <td><?php echo $row['gender'];  ?></td>
+                while ($row = $sql->fetch_assoc()): ?>
+                <td><?php echo htmlspecialchars($row['id'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['first_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['phone_number'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['home_town'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['contact_address'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($row['gender'], ENT_QUOTES, 'UTF-8'); ?></td>
                 <td>
                   <table style="border-collapse: collapse; font: 12px Tahoma;" border="1" cellspacing="5" cellpadding="5"> 
 
@@ -197,7 +241,7 @@ $sql = $mysqli->query($query) or die($mysqli->error);
 
   
 
-                           <img src="<?php echo $row["image"]; ?>" width="100" heigh="200" align="right">
+                           <img src="<?php echo htmlspecialchars($row['image'], ENT_QUOTES, 'UTF-8'); ?>" width="100" heigh="200" align="right" alt="Indigene">
 
  
 
@@ -208,7 +252,7 @@ $sql = $mysqli->query($query) or die($mysqli->error);
                     </tbody>
                    </table> 
                 </td>
-                <td><?php echo $row['submission_date'];  ?></td>
+                <td><?php echo htmlspecialchars($row['submission_date'], ENT_QUOTES, 'UTF-8'); ?></td>
               </tr>
               <?php endwhile; }?>
             </table>

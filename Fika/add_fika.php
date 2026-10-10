@@ -177,7 +177,7 @@
 			<ul>
 				<a href="home_fika.php"><li>Home</li></a> |
                 <a href="add_fika.php"><li>Register</li></a> |
-                <a href="Record_fika.php"><li>Records</li>  </a>	
+                <a href="record_fika.php"><li>Records</li>  </a>
 			</ul>
 			</div>
 			  <img src="images/YARO.JPG" width="100%" height="160">
@@ -189,7 +189,7 @@
 		
 		<section id="right_side" >
 
-			<form  role="form" method="post" action="Record_fika.php" enctype="multipart/form-data">
+			<form  role="form" method="post" action="record_fika.php" enctype="multipart/form-data">
 				<div id="general_form">
 					<div id="fl">
 		        <P style="text-align: center; margin-bottom: 15px; font: 20px tahoma;"> REGISTRATION FORM </P>
@@ -238,7 +238,7 @@
 		     	 
 		     		 <br><br>
 		     		 
-		     		<input type="file" name="userfile"  class="input">
+                <input type="file" name="userfile" class="input" accept="image/bmp,image/gif,image/jpeg,image/png" required>
 
 		           <br><br><br>
 		     		 

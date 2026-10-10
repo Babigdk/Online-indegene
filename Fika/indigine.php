@@ -1,13 +1,22 @@
 <?php include 'database_fika.php';  ?>
 
 <?php 
+
+use OnlineIndegene\Logger;
+
   
    // query
 
 $query = "SELECT * FROM `fika_admin` ORDER BY id ASC";
 
 
-$sql = $mysqli->query($query) or die($mysqli->error);
+try {
+    $sql = $mysqli->query($query);
+} catch (mysqli_sql_exception $exception) {
+    Logger::error('Certificate record lookup failed', $exception);
+    http_response_code(500);
+    exit('The certificate record could not be loaded. Please try again later.');
+}
 
 while ($row = mysqli_fetch_array($sql,MYSQL_BOTH)):
 
@@ -42,7 +51,7 @@ while ($row = mysqli_fetch_array($sql,MYSQL_BOTH)):
 
   
 
-                           <img src="<?php echo $row["image"]; ?>" width="100" heigh="150" align="right">
+                           <img src="<?php echo htmlspecialchars($row['image'], ENT_QUOTES, 'UTF-8'); ?>" width="100" heigh="150" align="right" alt="Indigene">
 
  
 
@@ -65,7 +74,7 @@ while ($row = mysqli_fetch_array($sql,MYSQL_BOTH)):
 	
 	 	 
 
-		 <i><strong><?php echo $row['first_name']; ?></strong></i>
+		 <i><strong><?php echo htmlspecialchars($row['first_name'], ENT_QUOTES, 'UTF-8'); ?></strong></i>
 		 <p>is a Bone Fide of Fika Local Government He/She <br> Hails From <i>.................................. </i>Village in <i>................................................. </i>
 
 		 Ward of Fika Local Government Therefore the Local Government<br> Recommends Him/Her for any help/assistance you 
